@@ -23,7 +23,7 @@ function connect() {
         const json = event.data;
         const data = JSON.parse(json);
 
-        loadChannel(json.channel);
+        loadChannel(data.channel);
 
         const response = JSON.stringify({
             requestId: data.requestId,
