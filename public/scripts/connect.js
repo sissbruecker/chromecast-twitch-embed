@@ -1,4 +1,4 @@
-const MESSAGE_BUS = 'urn:x-cast:com.google.cast.chromecast.signage';
+const MESSAGE_BUS = 'urn:x-cast:com.google.cast.twitch-embed';
 
 function connect() {
 
