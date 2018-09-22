@@ -8,16 +8,14 @@ export class Player {
     play(channel) {
         if (!this.isPlaying) {
             this.isPlaying = true;
-            this.embed = new Twitch.Embed(this.videoEl, {
+            this.player = new Twitch.Player(this.videoEl, {
                 width: '100%',
                 height: '100%',
-                channel: channel,
-                layout: 'video',
-                theme: 'dark'
+                channel: channel
             });
             this.chat = new Zen(this.chatEl, { channels: [channel], theme: 'dark' });
         } else {
-            this.embed.player.setChannel(channel);
+            this.player.setChannel(channel);
             this.chat.moveTo(channel);
         }
     }
