@@ -14,6 +14,8 @@
             this.pending = [];
 
             this.update = this.update.bind(this);
+
+            this.clear();
         }
 
         append(el) {
@@ -49,7 +51,7 @@
     function renderMessage(user, message) {
 
         const userName = user['display-name'];
-        const userColor = user['color'] || 'inherit';
+        const userColor = user['color'];
 
         const el = document.createElement('p'),
             userEl = document.createElement('span'),
@@ -57,7 +59,9 @@
 
         userEl.innerText = userName;
         userEl.classList.add('zen-user');
-        userEl.style['color'] = userColor;
+        if (userColor) {
+            userEl.style['color'] = userColor;
+        }
 
         messageEl.innerText = `: ${message}`;
         messageEl.classList.add('zen-text');
@@ -76,13 +80,23 @@
         }
 
         connect(options) {
-            const client = new tmi.client(options);
+            this.client = new tmi.client(options);
 
-            client.on('connected', this.handleConnected.bind(this));
-            client.on('disconnected', this.handleDisconnected.bind(this));
-            client.on('message', this.handleMessage.bind(this));
+            this.client.on('connected', this.handleConnected.bind(this));
+            this.client.on('disconnected', this.handleDisconnected.bind(this));
+            this.client.on('join', this.handleJoin.bind(this));
+            this.client.on('message', this.handleMessage.bind(this));
 
-            client.connect();
+            this.client.connect();
+        }
+
+        disconnect() {
+            this.client.disconnect();
+        }
+
+        moveTo(channel) {
+            this.client.channels.concat().forEach(channel => this.client.leave(channel));
+            this.client.join(channel);
         }
 
         handleConnected(address, port) {
@@ -97,6 +111,13 @@
             );
         }
 
+        handleJoin(channel, username, self) {
+            if (!self) return;
+            this.list.append(
+                renderNotice(`Joined channel ${channel}`)
+            );
+        }
+
         handleMessage(channel, user, message, self) {
             this.list.append(
                 renderMessage(user, message)
@@ -105,18 +126,32 @@
 
     }
 
-    function Zen(containerId, options) {
+    class Zen {
+        constructor(containerId, options) {
+            this.container = setupContainer(containerId, options.theme);
+            this.messageList = new MessageList(this.container, options.messageLimit);
+            this.client = new Client(this.messageList);
 
-        const container = setupContainer(containerId);
-        const messageList = new MessageList(container, options.messageLimit);
-        const client = new Client(messageList);
+            this.client.connect(options);
+        }
 
-        client.connect(options);
+        moveTo(channel) {
+            this.client.moveTo(channel);
+        }
+
+        destroy() {
+            this.client.disconnect();
+            this.messageList.clear();
+        }
     }
 
-    function setupContainer(containerId) {
+    function setupContainer(containerId, theme) {
         const container = document.getElementById(containerId);
         container.classList.add('zen-container');
+
+        if (theme) {
+            container.classList.add(theme);
+        }
 
         return container;
     }

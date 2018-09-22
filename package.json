@@ -1,0 +1,23 @@
+{
+  "name": "chromecast-twitch-embed",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "rollup src/main.js --file public/scripts/bundle.js --format iife"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sissbruecker/chromecast-twitch-embed.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sissbruecker/chromecast-twitch-embed/issues"
+  },
+  "homepage": "https://github.com/sissbruecker/chromecast-twitch-embed#readme",
+  "devDependencies": {
+    "rollup": "^0.66.2"
+  }
+}
