@@ -41,7 +41,7 @@
 
             window.castReceiverManager = cast.receiver.CastReceiverManager.getInstance();
 
-            window.castReceiverManager.onReady = function (event) {
+            window.castReceiverManager.onReady = event => {
                 console.log('Received Ready event: ' + JSON.stringify(event.data));
                 window.castReceiverManager.setApplicationState('Application status is ready...');
             };
@@ -49,7 +49,7 @@
             window.messageBus = window.castReceiverManager.getCastMessageBus(
                 MESSAGE_BUS
             );
-            window.messageBus.onMessage = function (event) {
+            window.messageBus.onMessage = event => {
 
                 console.log(`Received message from: ${event.senderId}`);
 
