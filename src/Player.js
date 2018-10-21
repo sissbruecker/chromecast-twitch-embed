@@ -13,7 +13,11 @@ export class Player {
                 height: '100%',
                 channel: channel
             });
-            this.chat = new Zen(this.chatEl, { channels: [channel], theme: 'dark' });
+            this.chat = new Zen(this.chatEl, {
+                channels: [channel],
+                theme: 'dark',
+                connection: { port: 443, reconnect: true }
+            });
         } else {
             this.player.setChannel(channel);
             this.chat.moveTo(channel);
