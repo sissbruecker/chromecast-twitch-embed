@@ -16,6 +16,7 @@
                     height: '100%',
                     channel: channel
                 });
+                this.player.setVolume(1);
                 this.chat = new Zen(this.chatEl, {
                     channels: [channel],
                     theme: 'dark',
