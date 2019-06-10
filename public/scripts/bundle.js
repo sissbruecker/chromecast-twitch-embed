@@ -3,33 +3,55 @@
 
     class Player {
         constructor(videoEl, chatEl) {
-            this.isPlaying = false;
             this.videoEl = videoEl;
             this.chatEl = chatEl;
+
+            this.chat = new Zen(this.chatEl, {
+                channels: [],
+                theme: 'dark',
+                connection: { port: 443, reconnect: true }
+            });
         }
 
-        play(channel) {
-            if (!this.isPlaying) {
-                this.isPlaying = true;
-                this.player = new Twitch.Player(this.videoEl, {
-                    width: '100%',
-                    height: '100%',
-                    channel: channel
-                });
-                this.player.setVolume(1);
-                this.chat = new Zen(this.chatEl, {
-                    channels: [channel],
-                    theme: 'dark',
-                    connection: { port: 443, reconnect: true }
-                });
-            } else {
-                this.player.setChannel(channel);
-                this.chat.moveTo(channel);
-            }
+        playChannel(channel) {
+            this.initPlayer({ channel });
+            this.chat.moveTo(channel);
+        }
+
+        playVideo(video) {
+            this.initPlayer({ video });
+            this.chat.leave();
+        }
+
+        seek(timestamp) {
+            if (!this.player) return;
+
+            this.player.seek(timestamp);
+        }
+
+        initPlayer(options) {
+            this.destroy();
+            this.player = new Twitch.Player(this.videoEl, {
+                width: '100%',
+                height: '100%',
+                ...options
+            });
+            this.player.setVolume(1);
+        }
+
+        destroy() {
+            this.player && this.player.destroy();
+            this.player = null;
         }
     }
 
     const MESSAGE_BUS = 'urn:x-cast:com.google.cast.twitch-embed';
+
+    const Commands = {
+        PLAY_CHANNEL: 'playChannel',
+        PLAY_VIDEO: 'playVideo',
+        SEEK: 'seek'
+    };
 
     class Receiver {
 
@@ -57,22 +79,14 @@
                 console.log(`Received message from: ${event.senderId}`);
 
                 const json = event.data;
-                const data = JSON.parse(json);
-                const channel = data.channel;
+                const command = JSON.parse(json);
                 let response;
 
                 try {
-                    this.player.play(channel);
-                    response = JSON.stringify({
-                        requestId: data.requestId,
-                        message: 'Started playback'
-                    });
+                    response = this.executeCommand(command);
                 } catch (e) {
-                    console.error(`Error starting playback for channel ${channel}`);
-                    response = JSON.stringify({
-                        requestId: data.requestId,
-                        message: 'Error starting playback'
-                    });
+                    console.error(`Error executing command ${command}`, e);
+                    response = makeResponse(`Error executing command: ${e}`, command);
                 }
 
                 window.messageBus.send(event.senderId, response);
@@ -80,6 +94,32 @@
 
             window.castReceiverManager.start({ statusText: 'Application is starting' });
         }
+
+        executeCommand(command) {
+            const { type } = command;
+
+            switch (type) {
+                case Commands.PLAY_CHANNEL:
+                    this.player.playChannel(command.channel);
+                    return makeResponse(`Started playing channel ${command.channel}`, command);
+                case Commands.PLAY_VIDEO:
+                    this.player.playVideo(command.video);
+                    return makeResponse(`Started playing video ${command.video}`, command);
+                case Commands.SEEK:
+                    this.player.seek(command.time);
+                    return makeResponse(`Seek to time ${command.time}`, command);
+                default:
+                    return makeResponse(`Unknown command: ${command}`, command);
+            }
+        }
+
+    }
+
+    function makeResponse(text, command) {
+        return JSON.stringify({
+            message: text,
+            requestId: command.requestId
+        });
     }
 
     const VIDEO_CONTAINER_ID = 'twitch-embed';
@@ -102,10 +142,15 @@
     function tryPlayFromQuery() {
         const params = new URLSearchParams(window.location.search);
         const channel = params.get('channel');
+        const video = params.get('video');
 
-        if (!channel) return;
+        if (channel) {
+            player.playChannel(channel);
+        }
 
-        player.play(channel);
+        if (video) {
+            player.playVideo(video);
+        }
     }
 
 }());

@@ -21,8 +21,13 @@ function init() {
 function tryPlayFromQuery() {
     const params = new URLSearchParams(window.location.search);
     const channel = params.get('channel');
+    const video = params.get('video');
 
-    if (!channel) return;
+    if (channel) {
+        player.playChannel(channel);
+    }
 
-    player.play(channel);
+    if (video) {
+        player.playVideo(video);
+    }
 }

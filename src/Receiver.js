@@ -1,5 +1,11 @@
 const MESSAGE_BUS = 'urn:x-cast:com.google.cast.twitch-embed';
 
+const Commands = {
+    PLAY_CHANNEL: 'playChannel',
+    PLAY_VIDEO: 'playVideo',
+    SEEK: 'seek'
+};
+
 export class Receiver {
 
     constructor(player) {
@@ -26,22 +32,14 @@ export class Receiver {
             console.log(`Received message from: ${event.senderId}`);
 
             const json = event.data;
-            const data = JSON.parse(json);
-            const channel = data.channel;
+            const command = JSON.parse(json);
             let response;
 
             try {
-                this.player.play(channel);
-                response = JSON.stringify({
-                    requestId: data.requestId,
-                    message: 'Started playback'
-                });
+                response = this.executeCommand(command);
             } catch (e) {
-                console.error(`Error starting playback for channel ${channel}`);
-                response = JSON.stringify({
-                    requestId: data.requestId,
-                    message: 'Error starting playback'
-                });
+                console.error(`Error executing command ${command}`, e);
+                response = makeResponse(`Error executing command: ${e}`, command);
             }
 
             window.messageBus.send(event.senderId, response);
@@ -49,4 +47,30 @@ export class Receiver {
 
         window.castReceiverManager.start({ statusText: 'Application is starting' });
     }
+
+    executeCommand(command) {
+        const { type } = command;
+
+        switch (type) {
+            case Commands.PLAY_CHANNEL:
+                this.player.playChannel(command.channel);
+                return makeResponse(`Started playing channel ${command.channel}`, command);
+            case Commands.PLAY_VIDEO:
+                this.player.playVideo(command.video);
+                return makeResponse(`Started playing video ${command.video}`, command);
+            case Commands.SEEK:
+                this.player.seek(command.time);
+                return makeResponse(`Seek to time ${command.time}`, command);
+            default:
+                return makeResponse(`Unknown command: ${command}`, command);
+        }
+    }
+
+}
+
+function makeResponse(text, command) {
+    return JSON.stringify({
+        message: text,
+        requestId: command.requestId
+    });
 }
